@@ -1,0 +1,36 @@
+image: node:22
+
+stages:
+  - install
+  - verify
+
+cache:
+  key: ${CI_COMMIT_REF_SLUG}
+  paths:
+    - node_modules/
+    - .pnpm-store/
+
+install:
+  stage: install
+  script:
+    - corepack enable
+    - pnpm install --frozen-lockfile || pnpm install
+  artifacts:
+    paths:
+      - node_modules/
+      - apps/*/node_modules/
+      - packages/*/node_modules/
+      - e2e/node_modules/
+    expire_in: 1 hour
+
+verify:
+  stage: verify
+  needs: [install]
+  script:
+    - corepack enable
+    - pnpm --filter @simmi/shared build
+    - pnpm --filter @simmi/api build
+    - pnpm --filter @simmi/storefront build
+    - pnpm --filter @simmi/admin build
+    - pnpm --filter @simmi/api test
+    - pnpm --filter @simmi/storefront test
